@@ -4,7 +4,8 @@ import { useAuth } from "./auth/AuthContext";
 import Login from "./Login";
 
 function TypeList() {
-  const { user, role, permissions, logout } = useAuth();
+  const { user, role, rankName, permissions, logout, confirmWithPin } =
+    useAuth();
   const [types, setTypes] = useState([]);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -34,12 +35,20 @@ function TypeList() {
 
     if (editingId) {
       if (!permissions.canUpdate) return;
+
+      const ok = await confirmWithPin("ยืนยันการขอแก้ไขข้อมูลนี้ (PIN)");
+      if (!ok) return;
+
       result = await supabase
         .from("type")
         .update({ type_name: name })
         .eq("type_id", editingId);
     } else {
       if (!permissions.canCreate) return;
+
+      const ok = await confirmWithPin("ยืนยันการเพิ่มข้อมูลนี้ (PIN)");
+      if (!ok) return;
+
       result = await supabase.from("type").insert({ type_name: name });
     }
 
@@ -62,6 +71,10 @@ function TypeList() {
 
   const handleDelete = async (id) => {
     if (!permissions.canDelete) return;
+
+    const ok = await confirmWithPin("ยืนยันการลบข้อมูลนี้ (PIN)");
+    if (!ok) return;
+
     await supabase.from("type").delete().eq("type_id", id);
     fetchTypes();
   };
@@ -90,6 +103,7 @@ function TypeList() {
         <div>
           <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>{label}</p>
           <p style={{ margin: "4px 0 0", fontWeight: 600 }}>
+            {rankName ? `${rankName} ` : ""}
             {user?.user_fname || ""} {user?.user_lname || ""}{" "}
             <span style={{ fontWeight: 400, color: "#64748b" }}>
               (@{user?.user_uname})
